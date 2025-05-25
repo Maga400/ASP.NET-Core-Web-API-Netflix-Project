@@ -144,9 +144,9 @@ namespace Netflix.WebAPI.Controllers
         }
 
         [HttpGet("categories")]
-        public async Task<IActionResult> GetMoviesByCategory([FromQuery] string category, [FromQuery] int page = 1, [FromQuery] string lang = "en-US")
+        public async Task<IActionResult> GetMoviesByCategory([FromQuery] string category, [FromQuery] int page = 1, [FromQuery] string lang = "en-US", [FromQuery] int count = 20)
         {
-            int perPage = 20;
+            int perPage = count;
             string endpoint = $"movie/{category}?language={lang}&page={page}";
 
             var json = await _tmdb.GetFromTmdbAsync(endpoint);
@@ -156,7 +156,19 @@ namespace Netflix.WebAPI.Controllers
 
             var totalPages = root.GetProperty("total_pages").GetInt32();
             var totalResults = root.GetProperty("total_results").GetInt32();
-            var results = root.GetProperty("results").EnumerateArray().Take(perPage).ToArray();
+
+            var results = root.GetProperty("results")
+                              .EnumerateArray()
+                              .Take(perPage)
+                              .Select(r => new
+                              {
+                                  id = r.GetProperty("id").GetInt32(),
+                                  title = r.GetProperty("title").GetString(),
+                                  overview = r.GetProperty("overview").GetString(),
+                                  poster_path = r.GetProperty("poster_path").GetString(),
+                                  release_date = r.GetProperty("release_date").GetString()
+                              })
+                              .ToList();
 
             return Ok(new
             {

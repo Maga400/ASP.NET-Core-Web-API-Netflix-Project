@@ -143,19 +143,29 @@ namespace Netflix.WebAPI.Controllers
         }
 
         [HttpGet("categories")]
-        public async Task<IActionResult> GetTvShowsByCategory([FromQuery] string category, [FromQuery] int page = 1, [FromQuery] string lang = "en-US")
+        public async Task<IActionResult> GetTvShowsByCategory([FromQuery] string category, [FromQuery] int page = 1, [FromQuery] string lang = "en-US", [FromQuery] int count = 20)
         {
-            int perPage = 20;
+            int perPage = count;
             string endpoint = $"tv/{category}?language={lang}&page={page}";
 
             var json = await _tmdb.GetFromTmdbAsync(endpoint);
 
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
+            int totalPages, totalResults;
+            object[] results;
 
-            var totalPages = root.GetProperty("total_pages").GetInt32();
-            var totalResults = root.GetProperty("total_results").GetInt32();
-            var results = root.GetProperty("results").EnumerateArray().Take(perPage).ToArray();
+            using (var doc = JsonDocument.Parse(json))
+            {
+                var root = doc.RootElement;
+
+                totalPages = root.GetProperty("total_pages").GetInt32();
+                totalResults = root.GetProperty("total_results").GetInt32();
+
+                results = root.GetProperty("results")
+                              .EnumerateArray()
+                              .Take(perPage)
+                              .Select(r => JsonSerializer.Deserialize<object>(r.GetRawText()))
+                              .ToArray();
+            }
 
             return Ok(new
             {
