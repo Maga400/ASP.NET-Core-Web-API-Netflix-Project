@@ -186,7 +186,13 @@ namespace Netflix.WebAPI.Controllers
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
-            var genres = root.GetProperty("genres");
+            var genresElement = root.GetProperty("genres");
+
+            // JsonElement'i string olarak al
+            var genresJson = genresElement.GetRawText();
+
+            // Tekrar parse et (artık JsonDocument dispose edilebilir)
+            var genres = JsonSerializer.Deserialize<object>(genresJson);
 
             return Ok(new
             {
@@ -195,10 +201,10 @@ namespace Netflix.WebAPI.Controllers
             });
         }
 
+
         [HttpGet("genresByName")]
-        public async Task<IActionResult> GetTvShowsByGenreName([FromQuery] string genreName, [FromQuery] int? page, [FromQuery] string lang = "en-US")
+        public async Task<IActionResult> GetTvShowsByGenreName([FromQuery] string genreName, [FromQuery] int? page, [FromQuery] string lang = "en-US", [FromQuery] int count = 20)
         {
-            const int perPage = 20;
             int pageNumber = page ?? 1;
 
             if (string.IsNullOrWhiteSpace(genreName))
@@ -233,8 +239,11 @@ namespace Netflix.WebAPI.Controllers
 
             var totalPages = root.GetProperty("total_pages").GetInt32();
             var totalResults = root.GetProperty("total_results").GetInt32();
-            var tvShows = root.GetProperty("results").EnumerateArray().Take(perPage);
 
+            var tvShowsRawText = root.GetProperty("results").GetRawText();
+            var tvShowsList = JsonSerializer.Deserialize<List<JsonElement>>(tvShowsRawText);
+
+            var limitedTvShows = tvShowsList.Take(count).ToList();
             return Ok(new
             {
                 success = true,
@@ -242,8 +251,9 @@ namespace Netflix.WebAPI.Controllers
                 page = pageNumber,
                 totalPages,
                 totalResults,
-                tvShows
+                tvShows = limitedTvShows
             });
         }
+
     }
 }
