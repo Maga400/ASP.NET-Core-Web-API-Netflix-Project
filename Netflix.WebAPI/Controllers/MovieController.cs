@@ -72,7 +72,6 @@ namespace Netflix.WebAPI.Controllers
             });
         }
 
-        [Authorize]
         [HttpGet("{id}/trailers")]
         public async Task<IActionResult> GetMovieTrailers(int id, [FromQuery] string lang = "en-US")
         {
@@ -115,7 +114,6 @@ namespace Netflix.WebAPI.Controllers
             });
         }
 
-        [Authorize]
         [HttpGet("{id}/similar")]
         public async Task<IActionResult> GetSimilarMovies(int id, [FromQuery] string lang = "en-US", [FromQuery] int count = 20)
         {
