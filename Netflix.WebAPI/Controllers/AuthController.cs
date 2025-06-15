@@ -33,34 +33,27 @@ namespace Netflix.WebAPI.Controllers
             _customIdentityUserService = customIdentityUserService;
             _httpContextAccessor = httpContextAccessor;
         }
+         
+        [HttpPost("existUser")]
+        public async Task<IActionResult> ExistUser([FromQuery] string email)
+        {
+            var existingUser = await _userManager.FindByEmailAsync(email);
+            if (existingUser != null)
+            {
+                return BadRequest(new { Status = "Email Error", Message = "A user with this email already exists!" });
+            }
 
-        //[HttpPost("existUser")]
-        //public async Task<IActionResult> ExistUser([FromQuery] string email)
-        //{
-        //    var existingUser = await _userManager.FindByEmailAsync(email);
-        //    if (existingUser != null)
-        //    {
-        //        return BadRequest(new { Status = "Email Error", Message = "A user with this email already exists!" });
-        //    }
-
-        //    return Ok(new { Status = "Success" });
-        //}
+            return Ok(new { Status = "Success" });
+        }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            var checkUser = await _userManager.FindByEmailAsync(dto.Email);
-
-            if (checkUser != null)
-            {
-                return BadRequest(new { status = "Email Error", message = "A user with this email already exists!", error = "AUTH" });
-            }
-
             var user = new CustomIdentityUser
             {
                 UserName = dto.Username,
                 Email = dto.Email,
-                //ImagePath = dto.ImagePath,
+                ImagePath = dto.ImagePath,
                 //CarType = dto.CarType,
                 //PhoneNumber = dto.PhoneNumber,
                 //Name = dto.Name,

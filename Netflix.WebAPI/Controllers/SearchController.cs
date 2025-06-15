@@ -24,50 +24,6 @@ namespace Netflix.WebAPI.Controllers
 
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
-            var results = root.GetProperty("results");
-
-            if (results.GetArrayLength() == 0)
-            {
-                return NotFound();
-            }
-
-            return Ok(new
-            {
-                success = true,
-                content = results
-            });
-        }
-
-        [HttpGet("movie/{query}")]
-        public async Task<IActionResult> SearchMovie(string query, [FromQuery] string lang = "en-US")
-        {
-            var relativeUrl = $"search/movie?query={Uri.EscapeDataString(query)}&include_adult=false&language={lang}&page=1";
-            var json = await _tmdb.GetFromTmdbAsync(relativeUrl);
-
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-            var results = root.GetProperty("results");
-
-            if (results.GetArrayLength() == 0)
-            {
-                return NotFound();
-            }
-
-            return Ok(new
-            {
-                success = true,
-                content = results
-            });
-        }
-
-        [HttpGet("tv/{query}")]
-        public async Task<IActionResult> SearchTv(string query, [FromQuery] string lang = "en-US")
-        {
-            var relativeUrl = $"search/tv?query={Uri.EscapeDataString(query)}&include_adult=false&language={lang}&page=1";
-            var json = await _tmdb.GetFromTmdbAsync(relativeUrl);
-
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
 
             if (!root.TryGetProperty("results", out var results) || results.GetArrayLength() == 0)
             {
@@ -77,7 +33,83 @@ namespace Netflix.WebAPI.Controllers
             return Ok(new
             {
                 success = true,
-                content = results
+                content = results.Clone()
+            });
+        }
+
+        [HttpGet("movie/{page}")]
+        public async Task<IActionResult> SearchMovie(int page, [FromQuery] string query, [FromQuery] string lang = "en-US", [FromQuery] int count = 20)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return BadRequest(new { success = false, message = "Query cannot be empty." });
+
+            string relativeUrl = $"search/movie?query={Uri.EscapeDataString(query)}" +
+                                 $"&include_adult=false&language={lang}&page={page}";
+
+            var json = await _tmdb.GetFromTmdbAsync(relativeUrl);
+
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (!root.TryGetProperty("results", out var resultsElement) || resultsElement.GetArrayLength() == 0)
+            {
+                return NotFound(new { success = false, message = "No movies found." });
+            }
+
+            var totalPages = root.GetProperty("total_pages").GetInt32();
+            var totalResults = root.GetProperty("total_results").GetInt32();
+
+            var results = resultsElement.EnumerateArray()
+                                        .Take(count)
+                                        .Select(x => JsonSerializer.Deserialize<object>(x.GetRawText()))
+                                        .ToList();
+
+            return Ok(new
+            {
+                success = true,
+                query,
+                page,
+                totalPages,
+                totalResults,
+                movies = results
+            });
+        }
+
+        [HttpGet("tv/{page}")]
+        public async Task<IActionResult> SearchTv(int page, [FromQuery] string query, [FromQuery] string lang = "en-US", [FromQuery] int count = 20)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return BadRequest(new { success = false, message = "Query cannot be empty." });
+
+            string relativeUrl = $"search/tv?query={Uri.EscapeDataString(query)}" +
+                                 $"&include_adult=false&language={lang}&page={page}";
+
+            var json = await _tmdb.GetFromTmdbAsync(relativeUrl);
+
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (!root.TryGetProperty("results", out var resultsElement) || resultsElement.GetArrayLength() == 0)
+            {
+                return NotFound(new { success = false, message = "No TV shows found." });
+            }
+
+            var totalPages = root.GetProperty("total_pages").GetInt32();
+            var totalResults = root.GetProperty("total_results").GetInt32();
+
+            var results = resultsElement.EnumerateArray()
+                                        .Take(count)
+                                        .Select(x => JsonSerializer.Deserialize<object>(x.GetRawText()))
+                                        .ToList();
+
+            return Ok(new
+            {
+                success = true,
+                query,
+                page,
+                totalPages,
+                totalResults,
+                tvShows = results
             });
         }
     }

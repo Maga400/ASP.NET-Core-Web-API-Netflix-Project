@@ -40,6 +40,7 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
 builder.Services.AddHttpClient<ITmdbService, TmdbService>();
@@ -48,6 +49,8 @@ builder.Services.AddScoped<IPhotoService, PhotoService>();
 
 builder.Services.AddScoped<ICustomIdentityUserDAL, CustomIdentityUserDAL>();
 builder.Services.AddScoped<ICustomIdentityUserService, CustomIdentityUserService>();
+builder.Services.AddScoped<IFavouriteDAL, FavouriteDAL>();
+builder.Services.AddScoped<IFavouriteService, FavouriteService>();
 
 var connection = builder.Configuration.GetConnectionString("Default");
 
@@ -99,11 +102,6 @@ builder.Services.AddSwaggerGen();
 
 
 var app = builder.Build();
-app.UseSession();
-
-app.UseCors("AllowReactApp");
-
-app.UseMiddleware<GlobalErrorHandlerMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -114,9 +112,17 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseRouting();
+
+app.UseCors("AllowReactApp");
+
+app.UseSession();
+
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.UseMiddleware<GlobalErrorHandlerMiddleware>();
 
 app.MapControllers();
 

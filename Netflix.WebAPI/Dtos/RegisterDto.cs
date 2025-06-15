@@ -12,6 +12,8 @@ namespace Netflix.WebAPI.Dtos
         public string? Password { get; set; }
         [Required]
         public string? Role { get; set; } = "User";
+        [Required]
+        public string? ImagePath { get; set; }
 
         //[Required]
         //public string? Name { get; set; }

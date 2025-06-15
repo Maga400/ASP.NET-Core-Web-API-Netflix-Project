@@ -9,5 +9,6 @@ namespace Netflix.Entities.Models
 {
     public class CustomIdentityUser : IdentityUser
     {
+        public string? ImagePath { get; set; }
     }
 }

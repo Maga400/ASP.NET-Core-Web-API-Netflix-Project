@@ -11,6 +11,7 @@ namespace Netflix.DataAccess.Data
 {
     public class NetflixDbContext : IdentityDbContext<CustomIdentityUser,CustomIdentityRole,string>
     {
+        public DbSet<Favourite> Favourites { get; set; }
         public NetflixDbContext(DbContextOptions<NetflixDbContext> options) : base(options)
         {
         
