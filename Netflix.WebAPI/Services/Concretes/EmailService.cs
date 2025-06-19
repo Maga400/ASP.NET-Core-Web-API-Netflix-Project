@@ -100,7 +100,7 @@ namespace Netflix.WebAPI.Services.Concretes
 
                 smtpClient.Send(mailMessage);
 
-                _httpContextAccessor.HttpContext.Session.SetInt32("VerificationCode", verificationCode);
+                //_httpContextAccessor.HttpContext.Session.SetInt32("VerificationCode", verificationCode);
                 return verificationCode;
 
             }
